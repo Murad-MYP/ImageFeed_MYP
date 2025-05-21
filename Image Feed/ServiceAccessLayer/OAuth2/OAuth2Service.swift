@@ -28,51 +28,63 @@ final class OAuth2Service {
         task?.cancel()
         lastCode = code
         
-        let request = makeRequest(code: code)
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
+        do {
+            let request = try makeRequest(code: code)
+            let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    DispatchQueue.main.async {
+                        completion(.failure(error))
+                    }
+                    return
                 }
-                return
+                
+                if let response = response as? HTTPURLResponse,
+                   response.statusCode < 200 || response.statusCode >= 300 {
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.httpStatusCode(response.statusCode)))
+                    }
+                    return
+                }
+                
+                guard let data = data else {
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
+                    }
+                    return
+                }
+                
+                do {
+                    let decoder = JSONDecoder()
+                    let responseBody = try decoder.decode(OAuthTokenResponseBody.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(.success(responseBody.accessToken))
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        completion(.failure(error))
+                    }
+                }
             }
-            
-            if let response = response as? HTTPURLResponse,
-               response.statusCode < 200 || response.statusCode >= 300 {
-                DispatchQueue.main.async {
-                    completion(.failure(NetworkError.httpStatusCode(response.statusCode)))
-                }
-                return
-            }
-            
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
-                }
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                let responseBody = try decoder.decode(OAuthTokenResponseBody.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(responseBody.accessToken))
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(.failure(error))
-                }
-            }
+            self.task = task
+            task.resume()
+        } catch {
+            completion(.failure(error))
         }
-        self.task = task
-        task.resume()
     }
     
-    private func makeRequest(code: String) -> URLRequest {
-        var urlComponents = URLComponents(string: "\(Constants.API.defaultBaseURL)/oauth/token")!
-        urlComponents.queryItems = [
+    private func makeRequest(code: String) throws -> URLRequest {
+        guard let baseURL = URL(string: "\(Constants.API.defaultBaseURL)/oauth/token") else {
+            throw NetworkError.invalidBaseURL
+        }
+        
+        guard let urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) else {
+            throw NetworkError.invalidURLComponents
+        }
+        
+        var components = urlComponents
+        components.queryItems = [
             URLQueryItem(name: "client_id", value: Constants.API.accessKey),
             URLQueryItem(name: "client_secret", value: Constants.API.secretKey),
             URLQueryItem(name: "redirect_uri", value: Constants.API.redirectURI),
@@ -80,7 +92,11 @@ final class OAuth2Service {
             URLQueryItem(name: "grant_type", value: "authorization_code")
         ]
         
-        var request = URLRequest(url: urlComponents.url!)
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         return request
     }
@@ -89,4 +105,22 @@ final class OAuth2Service {
 enum NetworkError: Error {
     case httpStatusCode(Int)
     case urlRequestError(Error)
+    case invalidBaseURL
+    case invalidURLComponents
+    case invalidURL
+    
+    var localizedDescription: String {
+        switch self {
+        case .httpStatusCode(let code):
+            return "HTTP ошибка: \(code)"
+        case .urlRequestError(let error):
+            return "Ошибка запроса: \(error.localizedDescription)"
+        case .invalidBaseURL:
+            return "Некорректный базовый URL"
+        case .invalidURLComponents:
+            return "Некорректные компоненты URL"
+        case .invalidURL:
+            return "Некорректный URL"
+        }
+    }
 }
