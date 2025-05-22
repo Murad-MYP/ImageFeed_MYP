@@ -76,10 +76,12 @@ final class OAuth2Service {
     
     private func makeRequest(code: String) throws -> URLRequest {
         guard let baseURL = URL(string: "\(Constants.API.defaultBaseURL)/oauth/token") else {
+            print("[OAuth2Service] Error: Failed to create base URL")
             throw NetworkError.invalidBaseURL
         }
         
         guard let urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) else {
+            print("[OAuth2Service] Error: Failed to create URLComponents from base URL")
             throw NetworkError.invalidURLComponents
         }
         
@@ -93,6 +95,7 @@ final class OAuth2Service {
         ]
         
         guard let url = components.url else {
+            print("[OAuth2Service] Error: Failed to create URL from components")
             throw NetworkError.invalidURL
         }
         
