@@ -80,12 +80,10 @@ final class OAuth2Service {
             throw NetworkError.invalidBaseURL
         }
         
-        guard let urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: true) else {
-            print("[OAuth2Service] Error: Failed to create URLComponents from base URL")
-            throw NetworkError.invalidURLComponents
-        }
-        
-        var components = urlComponents
+        var components = URLComponents()
+        components.scheme = baseURL.scheme
+        components.host = baseURL.host
+        components.path = baseURL.path
         components.queryItems = [
             URLQueryItem(name: "client_id", value: Constants.API.accessKey),
             URLQueryItem(name: "client_secret", value: Constants.API.secretKey),
