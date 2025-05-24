@@ -75,7 +75,7 @@ final class OAuth2Service {
     }
     
     private func makeRequest(code: String) throws -> URLRequest {
-        guard let baseURL = URL(string: "\(Constants.API.defaultBaseURL)/oauth/token") else {
+        guard let baseURL = URL(string: "https://unsplash.com/oauth/token") else {
             print("[OAuth2Service] Error: Failed to create base URL")
             throw NetworkError.invalidBaseURL
         }
