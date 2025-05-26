@@ -21,6 +21,7 @@ final class OAuth2Service {
     private var task: URLSessionTask?
     private var lastCode: String?
     private let queue = DispatchQueue(label: "com.imagefeed.oauth2service", qos: .userInitiated)
+    private var isFetchingToken = false
     
     func fetchOAuthToken(code: String, completion: @escaping (Result<String, Error>) -> Void) {
         assert(Thread.isMainThread)
@@ -31,6 +32,13 @@ final class OAuth2Service {
             return
         }
         
+        guard !isFetchingToken else {
+            print("[OAuth2Service] fetchOAuthToken: AlreadyFetching - уже выполняется запрос токена")
+            return
+        }
+        
+        isFetchingToken = true
+        
         queue.async { [weak self] in
             guard let self = self else {
                 print("[OAuth2Service] fetchOAuthToken: SelfError - self был освобожден")
@@ -39,6 +47,7 @@ final class OAuth2Service {
             
             if self.lastCode == code {
                 print("[OAuth2Service] fetchOAuthToken: DuplicateRequest - дублирующийся запрос с кодом: \(code)")
+                self.isFetchingToken = false
                 return
             }
             
@@ -51,6 +60,10 @@ final class OAuth2Service {
                     guard let self = self else {
                         print("[OAuth2Service] fetchOAuthToken: SelfError - self был освобожден в completion")
                         return
+                    }
+                    
+                    defer {
+                        self.isFetchingToken = false
                     }
                     
                     if self.task?.state == .canceling {
@@ -104,6 +117,7 @@ final class OAuth2Service {
                 DispatchQueue.main.async {
                     completion(.failure(error))
                 }
+                self.isFetchingToken = false
             }
         }
     }
