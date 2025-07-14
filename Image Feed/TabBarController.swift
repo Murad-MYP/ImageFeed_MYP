@@ -1,5 +1,7 @@
 import UIKit
 
+// MARK: - TabBarController
+/// Кастомный TabBarController для приложения
 final class TabBarController: UITabBarController {
     
     override func awakeFromNib() {
@@ -12,6 +14,7 @@ final class TabBarController: UITabBarController {
         setupViewControllers()
     }
     
+    /// Настройка viewControllers и внешнего вида таббара
     private func setupViewControllers() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
         

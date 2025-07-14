@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - NetworkError
+/// Ошибки сетевого слоя
 enum NetworkError: Error {
     case httpStatusCode(Int)
     case urlRequestError(Error)

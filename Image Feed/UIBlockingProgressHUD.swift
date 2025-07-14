@@ -1,5 +1,7 @@
 import UIKit
 
+// MARK: - UIBlockingProgressHUD
+/// Класс для отображения блокирующего индикатора загрузки поверх всего UI
 final class UIBlockingProgressHUD {
     private static var window: UIWindow? {
         return UIApplication.shared.connectedScenes
@@ -12,6 +14,7 @@ final class UIBlockingProgressHUD {
     private static let lock = NSLock()
     private static var isShowing = false
     
+    /// Показать индикатор загрузки
     static func show() {
         lock.lock()
         defer { lock.unlock() }
@@ -22,11 +25,11 @@ final class UIBlockingProgressHUD {
         }
         
         DispatchQueue.main.async {
-            guard let window = window else {
-                print("[UIBlockingProgressHUD] show: NoWindow - окно не найдено")
-                return
-            }
-            
+        guard let window = window else {
+            print("[UIBlockingProgressHUD] show: NoWindow - окно не найдено")
+            return
+        }
+        
             let activityIndicator = UIActivityIndicatorView(style: .large)
             activityIndicator.color = .white
             activityIndicator.center = window.center
@@ -39,6 +42,7 @@ final class UIBlockingProgressHUD {
         }
     }
     
+    /// Скрыть индикатор загрузки
     static func dismiss() {
         lock.lock()
         defer { lock.unlock() }
@@ -49,11 +53,11 @@ final class UIBlockingProgressHUD {
         }
         
         DispatchQueue.main.async {
-            guard let window = window else {
-                print("[UIBlockingProgressHUD] dismiss: NoWindow - окно не найдено")
-                return
-            }
-            
+        guard let window = window else {
+            print("[UIBlockingProgressHUD] dismiss: NoWindow - окно не найдено")
+            return
+        }
+        
             activityIndicator?.stopAnimating()
             activityIndicator?.removeFromSuperview()
             activityIndicator = nil

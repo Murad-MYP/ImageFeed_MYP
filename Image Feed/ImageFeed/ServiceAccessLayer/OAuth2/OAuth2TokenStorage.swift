@@ -1,6 +1,8 @@
 import Foundation
 import SwiftKeychainWrapper
 
+// MARK: - OAuth2TokenStorage
+/// Хранилище OAuth2 токена (Singleton, Keychain)
 final class OAuth2TokenStorage {
     static let shared = OAuth2TokenStorage()
     private init() {}

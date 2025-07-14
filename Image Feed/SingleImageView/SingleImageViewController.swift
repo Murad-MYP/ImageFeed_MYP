@@ -1,5 +1,7 @@
 import UIKit
 
+// MARK: - SingleImageViewController
+/// Контроллер для просмотра одного изображения с возможностью масштабирования и шаринга
 final class SingleImageViewController: UIViewController {
     var image: UIImage? {
         didSet {
@@ -24,10 +26,12 @@ final class SingleImageViewController: UIViewController {
         }
     }
 
+    /// Обработка нажатия кнопки "Назад"
     @IBAction private func didTapBackButton() {
         dismiss(animated: true, completion: nil)
     }
     
+    /// Обработка нажатия кнопки "Поделиться"
     @IBAction func didTapShareButton(_ sender: UIButton) {
         guard let image = image else { return }
         let share = UIActivityViewController(
@@ -37,6 +41,7 @@ final class SingleImageViewController: UIViewController {
         present(share, animated: true, completion: nil)
     }
     
+    /// Масштабирование и центрирование изображения в scrollView
     private func rescaleAndCenterImageInScrollView(image: UIImage) {
         let minZoomScale = scrollView.minimumZoomScale
         let maxZoomScale = scrollView.maximumZoomScale
@@ -55,6 +60,7 @@ final class SingleImageViewController: UIViewController {
     }
 }
 
+// MARK: - UIScrollViewDelegate
 extension SingleImageViewController: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         imageView

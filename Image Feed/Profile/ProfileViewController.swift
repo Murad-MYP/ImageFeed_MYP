@@ -1,6 +1,8 @@
 import UIKit
 import Kingfisher
 
+// MARK: - ProfileViewController
+/// Контроллер профиля пользователя
 final class ProfileViewController: UIViewController {
     @IBOutlet private var avatarImageView: UIImageView!
     @IBOutlet private var nameLabel: UILabel!
@@ -16,6 +18,7 @@ final class ProfileViewController: UIViewController {
         updateProfile()
     }
     
+    /// Обновить данные профиля на экране
     private func updateProfile() {
         guard let token = oauth2TokenStorage.token else { return }
         
@@ -35,6 +38,7 @@ final class ProfileViewController: UIViewController {
         }
     }
     
+    /// Обработка нажатия на кнопку выхода
     @IBAction private func didTapLogoutButton() {
         oauth2TokenStorage.token = nil
     }

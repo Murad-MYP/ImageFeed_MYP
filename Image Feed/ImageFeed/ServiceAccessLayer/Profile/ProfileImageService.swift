@@ -1,5 +1,6 @@
 import Foundation
 
+// MARK: - UserResult
 struct UserResult: Decodable {
     let profileImage: ProfileImageURL
     
@@ -8,12 +9,15 @@ struct UserResult: Decodable {
     }
 }
 
+// MARK: - ProfileImageURL
 struct ProfileImageURL: Decodable {
     let small: String
     let medium: String
     let large: String
 }
 
+// MARK: - ProfileImageService
+/// Сервис для получения URL аватара пользователя (Singleton)
 final class ProfileImageService {
     static let shared = ProfileImageService()
     static let didChangeNotification = Notification.Name("ProfileImageProviderDidChange")
@@ -24,6 +28,7 @@ final class ProfileImageService {
     private let lock = NSLock()
     private(set) var avatarURL: String?
     
+    /// Получить URL аватара пользователя по username
     func fetchProfileImageURL(username: String, completion: @escaping (Result<String, Error>) -> Void) {
         assert(Thread.isMainThread)
         
@@ -35,24 +40,24 @@ final class ProfileImageService {
         do {
             let request = try makeRequest(username: username)
             let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                guard let self = self else {
+            guard let self = self else {
                     print("[ProfileImageService] fetchProfileImageURL: SelfError - self был освобожден")
-                    return
-                }
-                
+                return
+            }
+            
                 if let error = error as NSError?, error.code == NSURLErrorCancelled {
                     print("[ProfileImageService] fetchProfileImageURL: TaskCancelled - задача была отменена")
-                    return
-                }
-                
-                if let error = error {
-                    print("[ProfileImageService] fetchProfileImageURL: NetworkError - \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
+                        return
                     }
-                    return
-                }
-                
+                    
+                    if let error = error {
+                    print("[ProfileImageService] fetchProfileImageURL: NetworkError - \(error.localizedDescription)")
+                        DispatchQueue.main.async {
+                            completion(.failure(error))
+                        }
+                        return
+                    }
+                    
                 guard let response = response as? HTTPURLResponse else {
                     print("[ProfileImageService] fetchProfileImageURL: InvalidResponse - невалидный ответ")
                     DispatchQueue.main.async {
@@ -61,53 +66,54 @@ final class ProfileImageService {
                     return
                 }
                 
-                if response.statusCode < 200 || response.statusCode >= 300 {
+                        if response.statusCode < 200 || response.statusCode >= 300 {
                     print("[ProfileImageService] fetchProfileImageURL: HTTPError - код статуса: \(response.statusCode)")
-                    DispatchQueue.main.async {
-                        completion(.failure(NetworkError.httpStatusCode(response.statusCode)))
+                            DispatchQueue.main.async {
+                                completion(.failure(NetworkError.httpStatusCode(response.statusCode)))
+                            }
+                            return
                     }
-                    return
-                }
-                
-                guard let data = data else {
+                    
+                    guard let data = data else {
                     print("[ProfileImageService] fetchProfileImageURL: DataError - данные не получены")
-                    DispatchQueue.main.async {
-                        completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
+                        DispatchQueue.main.async {
+                            completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
+                        }
+                        return
                     }
-                    return
-                }
-                
-                do {
-                    let decoder = JSONDecoder()
+                    
+                    do {
+                        let decoder = JSONDecoder()
                     let userResult = try decoder.decode(UserResult.self, from: data)
                     let imageURL = userResult.profileImage.large
                     
-                    DispatchQueue.main.async {
+                        DispatchQueue.main.async {
                         self.avatarURL = imageURL
                         completion(.success(imageURL))
-                        NotificationCenter.default.post(
-                            name: ProfileImageService.didChangeNotification,
-                            object: self,
+                            NotificationCenter.default.post(
+                                name: ProfileImageService.didChangeNotification,
+                                object: self,
                             userInfo: ["URL": imageURL]
-                        )
-                    }
-                } catch {
+                            )
+                        }
+                    } catch {
                     print("[ProfileImageService] fetchProfileImageURL: DecodingError - \(error.localizedDescription), данные: \(String(data: data, encoding: .utf8) ?? "невозможно преобразовать данные в строку")")
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
+                        DispatchQueue.main.async {
+                            completion(.failure(error))
+                        }
                     }
                 }
-            }
-            self.task = task
-            task.resume()
-        } catch {
+                self.task = task
+                task.resume()
+            } catch {
             print("[ProfileImageService] fetchProfileImageURL: RequestError - \(error.localizedDescription)")
-            DispatchQueue.main.async {
-                completion(.failure(error))
+                DispatchQueue.main.async {
+                    completion(.failure(error))
             }
         }
     }
     
+    /// Сформировать URLRequest для получения аватара
     private func makeRequest(username: String) throws -> URLRequest {
         guard let baseURL = URL(string: "https://api.unsplash.com/users/\(username)") else {
             print("[ProfileImageService] makeRequest: InvalidBaseURL - не удалось создать URL")

@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - Profile
+/// Модель профиля пользователя
 struct Profile: Decodable {
     let username: String
     let firstName: String
@@ -14,6 +16,8 @@ struct Profile: Decodable {
     }
 }
 
+// MARK: - ProfileImage
+/// Модель изображения профиля
 struct ProfileImage: Decodable {
     let profileImage: ProfileImageURLs
     
@@ -22,6 +26,8 @@ struct ProfileImage: Decodable {
     }
 }
 
+// MARK: - ProfileImageURLs
+/// URL-адреса изображений профиля
 struct ProfileImageURLs: Decodable {
     let small: String
     let medium: String

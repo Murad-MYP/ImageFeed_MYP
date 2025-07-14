@@ -1,14 +1,16 @@
 import UIKit
 
+// MARK: - AuthViewControllerDelegate
 protocol AuthViewControllerDelegate: AnyObject {
-    func authViewController(_ vc: AuthViewController, didAuthenticateWithCode code: String)
+    func authViewController(_ viewController: AuthViewController, didAuthenticateWithCode code: String)
 }
 
+// MARK: - AuthViewController
 final class AuthViewController: UIViewController {
     weak var delegate: AuthViewControllerDelegate?
     
-    private var logoImageView: UIImageView!
-    private var loginButton: UIButton!
+    private var logoImageView: UIImageView?
+    private var loginButton: UIButton?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -19,27 +21,36 @@ final class AuthViewController: UIViewController {
         .lightContent
     }
     
+    // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = UIColor(named: "YP Black")
         
         // Logo
-        logoImageView = UIImageView()
-        logoImageView.image = UIImage(named: "auth_screen_logo")
-        logoImageView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(logoImageView)
+        let imageView = UIImageView()
+        if let logoImage = UIImage(named: "auth_screen_logo") {
+            imageView.image = logoImage
+        } else {
+            print("⚠️ Ошибка: изображение 'auth_screen_logo' не найдено.")
+        }
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(imageView)
+        self.logoImageView = imageView
         
         // Login button
-        loginButton = UIButton(type: .system)
-        loginButton.setTitle("Войти", for: .normal)
-        loginButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 17)
-        loginButton.setTitleColor(.black, for: .normal)
-        loginButton.backgroundColor = .white
-        loginButton.layer.cornerRadius = 16
-        loginButton.translatesAutoresizingMaskIntoConstraints = false
-        loginButton.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
-        view.addSubview(loginButton)
+        let button = UIButton(type: .system)
+        button.setTitle("Войти", for: .normal)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 17)
+        button.setTitleColor(.black, for: .normal)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 16
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
+        view.addSubview(button)
+        self.loginButton = button
         
         // Constraints
+        guard let logoImageView = logoImageView, let loginButton = loginButton else { return }
+        
         NSLayoutConstraint.activate([
             logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -51,6 +62,7 @@ final class AuthViewController: UIViewController {
         ])
     }
     
+    // MARK: - Actions
     @objc private func loginButtonTapped() {
         let webViewViewController = WebViewViewController()
         webViewViewController.delegate = self
@@ -58,6 +70,7 @@ final class AuthViewController: UIViewController {
         present(webViewViewController, animated: true)
     }
     
+    // MARK: - Error Handling
     func showNetworkError() {
         let alert = UIAlertController(
             title: "Что-то пошло не так(",
@@ -69,15 +82,16 @@ final class AuthViewController: UIViewController {
     }
 }
 
+// MARK: - WebViewViewControllerDelegate
 extension AuthViewController: WebViewViewControllerDelegate {
-    func webViewViewController(_ vc: WebViewViewController, didAuthenticateWithCode code: String) {
-        vc.dismiss(animated: true) { [weak self] in
+    func webViewViewController(_ viewController: WebViewViewController, didAuthenticateWithCode code: String) {
+        viewController.dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
             self.delegate?.authViewController(self, didAuthenticateWithCode: code)
         }
     }
 
-    func webViewViewControllerDidCancel(_ vc: WebViewViewController) {
-        vc.dismiss(animated: true)
+    func webViewViewControllerDidCancel(_ viewController: WebViewViewController) {
+        viewController.dismiss(animated: true)
     }
 }

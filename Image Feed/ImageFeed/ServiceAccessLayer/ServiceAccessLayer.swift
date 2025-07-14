@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - ServiceAccessLayer
+/// Слой доступа к сервисам приложения (Singleton)
 final class ServiceAccessLayer {
     static let shared = ServiceAccessLayer()
     

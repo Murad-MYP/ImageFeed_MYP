@@ -1,5 +1,7 @@
 import UIKit
 
+// MARK: - ImagesListCell
+/// Ячейка списка изображений
 final class ImagesListCell: UITableViewCell {
     static let reuseIdentifier = "ImagesListCell"
     @IBOutlet var cellImage: UIImageView!

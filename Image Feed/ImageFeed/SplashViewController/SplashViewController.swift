@@ -68,10 +68,10 @@ final class SplashViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "YP Black")
+        view.backgroundColor = UIColor(named: "YP Black") ?? .black
         
         logoImageView = UIImageView()
-        logoImageView.image = UIImage(named: "logo")
+        logoImageView.image = UIImage(named: "logo") ?? UIImage()
         logoImageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(logoImageView)
         
@@ -91,12 +91,20 @@ final class SplashViewController: UIViewController {
     
     private func switchToTabBarController() {
         let storyboard = UIStoryboard(name: "Main", bundle: .main)
-        let tabBarController = storyboard.instantiateViewController(withIdentifier: "TabBarViewController")
+        let tabBarControllerOptional = storyboard.instantiateViewController(withIdentifier: "TabBarViewController") as? UITabBarController
+        
+        guard let tabBarController = tabBarControllerOptional else {
+            print("[SplashViewController] Не удалось инициализировать TabBarViewController")
+            return
+        }
         
         guard let window = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .flatMap({ $0.windows })
-            .first else { return }
+            .first else {
+                print("[SplashViewController] Окно не найдено при попытке перехода к TabBarController")
+                return
+        }
         
         window.rootViewController = tabBarController
     }
@@ -134,7 +142,7 @@ extension SplashViewController: AuthViewControllerDelegate {
     private func showAuthError(_ error: Error) {
         let alert = UIAlertController(
             title: "Что-то пошло не так(",
-            message: "Не удалось войти в систему",
+            message: "Не удалось войти в систему\n\(error.localizedDescription)",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "ОК", style: .default))
