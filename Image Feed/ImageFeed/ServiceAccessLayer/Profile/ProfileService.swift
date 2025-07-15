@@ -1,66 +1,35 @@
 import Foundation
 
-struct Profile: Decodable {
-    let username: String
-    let firstName: String
-    let lastName: String
-    let bio: String
-    
-    enum CodingKeys: String, CodingKey {
-        case username
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case bio
-    }
-}
-
-enum NetworkError: Error {
-    case httpStatusCode(Int)
-    case urlRequestError(Error)
-    case invalidBaseURL
-    case invalidURLComponents
-    case invalidURL
-    
-    var localizedDescription: String {
-        switch self {
-        case .httpStatusCode(let code):
-            return "HTTP ошибка: \(code)"
-        case .urlRequestError(let error):
-            return "Ошибка запроса: \(error.localizedDescription)"
-        case .invalidBaseURL:
-            return "Некорректный базовый URL"
-        case .invalidURLComponents:
-            return "Некорректные компоненты URL"
-        case .invalidURL:
-            return "Некорректный URL"
-        }
-    }
-}
-
+// MARK: - ProfileService
+/// Сервис для получения профиля пользователя (Singleton)
 final class ProfileService {
     static let shared = ProfileService()
     private init() {}
     
     private var task: URLSessionTask?
-    private let queue = DispatchQueue(label: "com.imagefeed.profileservice", qos: .userInitiated)
+    private let lock = NSLock()
     
+    /// Получить профиль пользователя по токену
     func fetchProfile(token: String, completion: @escaping (Result<Profile, Error>) -> Void) {
         assert(Thread.isMainThread)
         
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            
-            if self.task?.state == .cancelled {
-                print("[ProfileService] fetchProfile: Task was cancelled")
+        lock.lock()
+        defer { lock.unlock() }
+        
+        task?.cancel()
+        
+        do {
+            let request = try makeRequest(token: token)
+            let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+            guard let self = self else {
+                print("[ProfileService] fetchProfile: SelfError - self был освобожден")
                 return
             }
             
-            self.task?.cancel()
-            
-            do {
-                let request = try self.makeRequest(token: token)
-                let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                    guard let self = self else { return }
+                if let error = error as NSError?, error.code == NSURLErrorCancelled {
+                    print("[ProfileService] fetchProfile: TaskCancelled - задача была отменена")
+                        return
+                    }
                     
                     if let error = error {
                         print("[ProfileService] fetchProfile: NetworkError - \(error.localizedDescription)")
@@ -70,18 +39,24 @@ final class ProfileService {
                         return
                     }
                     
-                    if let response = response as? HTTPURLResponse {
+                guard let response = response as? HTTPURLResponse else {
+                    print("[ProfileService] fetchProfile: InvalidResponse - невалидный ответ")
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
+                    }
+                    return
+                }
+                
                         if response.statusCode < 200 || response.statusCode >= 300 {
-                            print("[ProfileService] fetchProfile: HTTPError - status code: \(response.statusCode)")
+                            print("[ProfileService] fetchProfile: HTTPError - код статуса: \(response.statusCode)")
                             DispatchQueue.main.async {
                                 completion(.failure(NetworkError.httpStatusCode(response.statusCode)))
                             }
                             return
-                        }
                     }
                     
                     guard let data = data else {
-                        print("[ProfileService] fetchProfile: DataError - no data received")
+                        print("[ProfileService] fetchProfile: DataError - данные не получены")
                         DispatchQueue.main.async {
                             completion(.failure(NetworkError.urlRequestError(URLError(.badServerResponse))))
                         }
@@ -95,7 +70,7 @@ final class ProfileService {
                             completion(.success(profile))
                         }
                     } catch {
-                        print("[ProfileService] fetchProfile: DecodingError - \(error.localizedDescription), data: \(String(data: data, encoding: .utf8) ?? "unable to convert data to string")")
+                        print("[ProfileService] fetchProfile: DecodingError - \(error.localizedDescription), данные: \(String(data: data, encoding: .utf8) ?? "невозможно преобразовать данные в строку")")
                         DispatchQueue.main.async {
                             completion(.failure(error))
                         }
@@ -107,14 +82,14 @@ final class ProfileService {
                 print("[ProfileService] fetchProfile: RequestError - \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(.failure(error))
-                }
             }
         }
     }
     
+    /// Сформировать URLRequest для получения профиля
     private func makeRequest(token: String) throws -> URLRequest {
         guard let baseURL = URL(string: "https://api.unsplash.com/me") else {
-            print("[ProfileService] makeRequest: InvalidBaseURL - failed to create URL")
+            print("[ProfileService] makeRequest: InvalidBaseURL - не удалось создать URL")
             throw NetworkError.invalidBaseURL
         }
         
