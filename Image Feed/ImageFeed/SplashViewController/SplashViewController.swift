@@ -55,7 +55,21 @@ final class SplashViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        checkAuthStatus()
+        if let token = oauth2TokenStorage.token {
+            UIBlockingProgressHUD.show()
+            profileService.fetchProfile(token: token) { [weak self] result in
+                UIBlockingProgressHUD.dismiss()
+                guard let self = self else { return }
+                switch result {
+                case .success:
+                    self.switchToTabBarController()
+                case .failure(let error):
+                    self.showProfileError(error)
+                }
+            }
+        } else {
+            presentAuthViewController()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -73,19 +87,12 @@ final class SplashViewController: UIViewController {
         logoImageView = UIImageView()
         logoImageView?.image = UIImage(named: "logo") ?? UIImage()
         logoImageView?.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(logoImageView!)
-        
-        NSLayoutConstraint.activate([
-            logoImageView!.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            logoImageView!.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-    }
-    
-    private func checkAuthStatus() {
-        if oauth2TokenStorage.token != nil {
-            switchToTabBarController()
-        } else {
-            presentAuthViewController()
+        if let logoImageView = logoImageView {
+            view.addSubview(logoImageView)
+            NSLayoutConstraint.activate([
+                logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            ])
         }
     }
     
@@ -131,7 +138,8 @@ extension SplashViewController: AuthViewControllerDelegate {
             guard let self = self else { return }
             
             switch result {
-            case .success:
+            case .success(let accessToken):
+                self.oauth2TokenStorage.token = accessToken
                 self.switchToTabBarController()
             case .failure(let error):
                 self.showAuthError(error)
@@ -143,6 +151,16 @@ extension SplashViewController: AuthViewControllerDelegate {
         let alert = UIAlertController(
             title: "Что-то пошло не так(",
             message: "Не удалось войти в систему\n\(error.localizedDescription)",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "ОК", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showProfileError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Что-то пошло не так(",
+            message: "Не удалось загрузить профиль\n\(error.localizedDescription)",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "ОК", style: .default))
