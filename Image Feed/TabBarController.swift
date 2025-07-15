@@ -37,8 +37,8 @@ final class TabBarController: UITabBarController {
         viewControllers = [imagesListViewController, profileViewController]
         
         // Настройка внешнего вида
-        tabBar.backgroundColor = UIColor(named: "YP Black")
-        tabBar.barTintColor = UIColor(named: "YP Black")
+        tabBar.backgroundColor = UIColor(named: "YPBlack")
+        tabBar.barTintColor = UIColor(named: "YPBlack")
         tabBar.tintColor = UIColor(named: "YP White")
     }
 } 

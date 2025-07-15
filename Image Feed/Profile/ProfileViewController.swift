@@ -4,11 +4,11 @@ import Kingfisher
 // MARK: - ProfileViewController
 /// Контроллер профиля пользователя
 final class ProfileViewController: UIViewController {
-    @IBOutlet private var avatarImageView: UIImageView!
-    @IBOutlet private var nameLabel: UILabel!
-    @IBOutlet private var loginNameLabel: UILabel!
-    @IBOutlet private var descriptionLabel: UILabel!
-    @IBOutlet private var logoutButton: UIButton!
+    @IBOutlet private var avatarImageView: UIImageView?
+    @IBOutlet private var nameLabel: UILabel?
+    @IBOutlet private var loginNameLabel: UILabel?
+    @IBOutlet private var descriptionLabel: UILabel?
+    @IBOutlet private var logoutButton: UIButton?
     
     private let profileService = ProfileService.shared
     private let oauth2TokenStorage = OAuth2TokenStorage.shared
@@ -28,9 +28,9 @@ final class ProfileViewController: UIViewController {
             switch result {
             case .success(let profile):
                 DispatchQueue.main.async {
-                    self.nameLabel.text = "\(profile.firstName) \(profile.lastName)"
-                    self.loginNameLabel.text = "@\(profile.username)"
-                    self.descriptionLabel.text = profile.bio
+                    self.nameLabel?.text = "\(profile.firstName) \(profile.lastName)"
+                    self.loginNameLabel?.text = "@\(profile.username)"
+                    self.descriptionLabel?.text = profile.bio
                 }
             case .failure(let error):
                 print("Profile error: \(error)")

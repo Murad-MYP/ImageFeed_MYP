@@ -23,7 +23,7 @@ final class AuthViewController: UIViewController {
     
     // MARK: - UI Setup
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "YP Black")
+        view.backgroundColor = UIColor(named: "YPBlack")
         
         // Logo
         let imageView = UIImageView()

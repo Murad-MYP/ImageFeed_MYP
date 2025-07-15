@@ -46,7 +46,7 @@ final class SplashViewController: UIViewController {
     private let profileService = ProfileService.shared
     private let profileImageService = ProfileImageService.shared
     
-    private var logoImageView: UIImageView!
+    private var logoImageView: UIImageView?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -68,16 +68,16 @@ final class SplashViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "YP Black") ?? .black
+        view.backgroundColor = UIColor(named: "YPBlack") ?? .black
         
         logoImageView = UIImageView()
-        logoImageView.image = UIImage(named: "logo") ?? UIImage()
-        logoImageView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(logoImageView)
+        logoImageView?.image = UIImage(named: "logo") ?? UIImage()
+        logoImageView?.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(logoImageView!)
         
         NSLayoutConstraint.activate([
-            logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            logoImageView!.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logoImageView!.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
     
