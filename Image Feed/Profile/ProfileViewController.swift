@@ -40,6 +40,27 @@ final class ProfileViewController: UIViewController {
     
     /// Обработка нажатия на кнопку выхода
     @IBAction private func didTapLogoutButton() {
+        let alert = UIAlertController(
+            title: "Выход",
+            message: "Вы уверены, что хотите выйти из аккаунта?",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { [weak self] _ in
+            self?.logout()
+        })
+        present(alert, animated: true)
+    }
+
+    private func logout() {
+        // Удаляем токен
         oauth2TokenStorage.token = nil
+        // Очищаем куки
+        HTTPCookieStorage.shared.removeCookies(since: .distantPast)
+        // Переход на SplashViewController
+        guard let window = UIApplication.shared.windows.first else { return }
+        let splashVC = SplashViewController()
+        window.rootViewController = splashVC
+        window.makeKeyAndVisible()
     }
 }

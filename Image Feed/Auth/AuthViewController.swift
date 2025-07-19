@@ -1,4 +1,4 @@
-import UIKit
+вimport UIKit
 
 // MARK: - AuthViewControllerDelegate
 protocol AuthViewControllerDelegate: AnyObject {

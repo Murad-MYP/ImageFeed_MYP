@@ -13,6 +13,8 @@ final class SingleImageViewController: UIViewController {
         }
     }
     
+    var fullImageURL: String?
+    
     @IBOutlet weak var scrollView: UIScrollView?
     @IBOutlet private var imageView: UIImageView?
 
@@ -20,8 +22,24 @@ final class SingleImageViewController: UIViewController {
         super.viewDidLoad()
         scrollView?.minimumZoomScale = 0.1
         scrollView?.maximumZoomScale = 1.25
-        imageView?.image = image
-        if let image = image {
+        if let urlString = fullImageURL, let url = URL(string: urlString) {
+            UIBlockingProgressHUD.show()
+            DispatchQueue.global().async {
+                if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        self.imageView?.image = image
+                        self.rescaleAndCenterImageInScrollView(image: image)
+                        UIBlockingProgressHUD.dismiss()
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        UIBlockingProgressHUD.dismiss()
+                        // Можно показать ошибку
+                    }
+                }
+            }
+        } else if let image = image {
+            imageView?.image = image
             rescaleAndCenterImageInScrollView(image: image)
         }
     }
