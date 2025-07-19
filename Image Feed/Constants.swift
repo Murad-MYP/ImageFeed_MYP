@@ -1,7 +1,9 @@
 import Foundation
 
+// MARK: - Constants
 /// Константы приложения
 enum Constants {
+    // MARK: - API
     /// API константы для работы с Unsplash
     enum API {
         static let defaultBaseURL: URL = {
